@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-stack
+  namespace: semantic-cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-stack
+  template:
+    metadata:
+      labels:
+        app: redis-stack
+    spec:
+      containers:
+        - name: redis-stack
+          image: redis/redis-stack:7.4.0-v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: redis
+              containerPort: 6379
+            - name: redis-insight
+              containerPort: 8001
+          env:
+            # Optional: require password (good practice). If you set this, your app must also use it.
+            # - name: REDIS_ARGS
+            #   value: "--requirepass ${REDIS_PASSWORD}"
+
+            # For now, no auth locally (simplest)
+            - name: REDIS_ARGS
+              value: "--appendonly yes --save 60 1 --loglevel notice --maxmemory 256mb --maxmemory-policy allkeys-lru"
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-stack
+  namespace: semantic-cache
+spec:
+  selector:
+    app: redis-stack
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+    - name: redis-insight
+      port: 8001
+      targetPort: 8001
+  type: ClusterIP

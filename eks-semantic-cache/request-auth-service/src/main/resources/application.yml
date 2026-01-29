@@ -1,0 +1,14 @@
+server:
+  port: 8081
+
+auth:
+  # Simple API key approach (recommended for gateway-to-service)
+  apiKey: "dev-api-key"
+  # Optional JWT secret for local dev only; DO NOT use in prod like this
+  jwtSecret: "dev-secret-change-me"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

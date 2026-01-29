@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: eks-semantic-cache
+data:
+  nginx.conf: |
+    worker_processes  1;
+
+    events { worker_connections  1024; }
+
+    http {
+      upstream request_auth_service {
+        server request-auth-service:8081;
+      }
+
+      upstream semantic_cache_service {
+        server semantic-cache-service:8082;
+      }
+
+      server {
+        listen 80;
+
+        location /auth/ {
+          proxy_pass http://request_auth_service/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location /cache/ {
+          proxy_pass http://semantic_cache_service/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        location / {
+          return 200 "eks-semantic-cache gateway OK\n";
+        }
+      }
+    }

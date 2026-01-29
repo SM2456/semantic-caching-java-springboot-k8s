@@ -1,0 +1,41 @@
+services:
+  redis-stack:
+    image: redis/redis-stack:7.4.0-v1
+    ports:
+      - "6379:6379"
+      - "8001:8001" # redis insight UI
+    environment:
+      - REDIS_ARGS=--save "" --appendonly no
+
+  request-auth-service:
+    build:
+      context: .
+      dockerfile: request-auth-service/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - AUTH_APIKEY=dev-api-key
+
+  semantic-cache-service:
+    build:
+      context: .
+      dockerfile: semantic-cache-service/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - APP_CACHE_REDISHOST=redis-stack
+      - APP_CACHE_REDISPORT=6379
+      # For local dev you can set AWS creds via standard env vars or ~/.aws
+      # - AWS_ACCESS_KEY_ID=...
+      # - AWS_SECRET_ACCESS_KEY=...
+      # - AWS_REGION=us-east-1
+    depends_on:
+      - redis-stack
+
+  nginx-gateway:
+    build: ./nginx
+    ports:
+      - "8080:8080"
+    depends_on:
+      - request-auth-service
+      - semantic-cache-service

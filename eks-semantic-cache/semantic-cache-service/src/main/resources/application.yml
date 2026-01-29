@@ -1,0 +1,27 @@
+server:
+  port: 8082
+
+app:
+  cache:
+    redisHost: "redis-stack"
+    redisPort: 6379
+    indexName: "idx:semantic_cache"
+    keyPrefix: "sc:"
+    ttlSeconds: 3600
+    topK: 5
+    minScore: 0.85 # cosine similarity threshold
+  dynamodb:
+    tableName: "SemanticData"
+    pkName: "pk"   # partition key in your table
+  bedrock:
+    region: "us-east-1"
+    # Use a Bedrock embedding model ID you have access to:
+    # Example: amazon.titan-embed-text-v2:0 (adjust if needed)
+    embeddingModelId: "amazon.titan-embed-text-v2:0"
+    embeddingDim: 1024
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

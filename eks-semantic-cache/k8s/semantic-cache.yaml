@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: semantic-cache
+  namespace: semantic-cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: semantic-cache
+  template:
+    metadata:
+      labels:
+        app: semantic-cache
+    spec:
+      containers:
+        - name: semantic-cache
+          image: semantic-cache-service:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          env:
+            - name: APP_CACHE_REDISHOST
+              value: redis-stack
+            - name: APP_CACHE_REDISPORT
+              value: "6379"
+            - name: APP_BEDROCK_REGION
+              value: "us-east-1"
+            - name: APP_DYNAMODB_TABLENAME
+              value: "SemanticData"
+            - name: APP_BEDROCK_EMBEDDINGMODELID
+              value: "amazon.titan-embed-text-v2:0"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: semantic-cache-service
+  namespace: semantic-cache
+spec:
+  selector:
+    app: semantic-cache
+  ports:
+    - port: 8082
+      targetPort: 8082
